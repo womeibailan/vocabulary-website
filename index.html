@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词学习助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4361ee',
+                        secondary: '#3f37c9',
+                        accent: '#4cc9f0',
+                        neutral: '#f8f9fa',
+                        'neutral-dark': '#e9ecef',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-height {
+                transition: max-height 0.3s ease-in-out;
+            }
+            .shadow-card {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .focus-ring {
+                @apply focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:outline-none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral min-h-screen">
+    <header class="bg-primary text-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold flex items-center">
+                <i class="fa fa-book mr-2"></i>
+                单词学习助手
+            </h1>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="#" class="hover:text-accent transition-colors duration-200 active" id="nav-exercise">练习</a></li>
+                    <li><a href="#" class="hover:text-accent transition-colors duration-200" id="nav-progress">学习进度</a></li>
+                    <li><a href="#" class="hover:text-accent transition-colors duration-200" id="nav-settings">设置</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- 练习模式选择 -->
+        <section id="exercise-section" class="mb-8">
+            <div class="bg-white rounded-lg shadow-card p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">选择练习模式</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-neutral rounded-lg p-4 cursor-pointer hover:bg-neutral-dark transition-colors duration-200" id="mode-fill-blank">
+                        <div class="flex items-center">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                                <i class="fa fa-pencil"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium">选词填空</h3>
+                                <p class="text-sm text-gray-600">从选项中选择正确的单词填空</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-neutral rounded-lg p-4 cursor-pointer hover:bg-neutral-dark transition-colors duration-200" id="challenge-mode">
+                        <div class="flex items-center">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                                <i class="fa fa-trophy"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium">闯关模式</h3>
+                                <p class="text-sm text-gray-600">完成50个单词关卡挑战</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 练习内容 -->
+            <div id="exercise-content" class="bg-white rounded-lg shadow-card p-6">
+                <div id="loading" class="flex flex-col items-center justify-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                    <p class="text-gray-600">加载中，请稍候...</p>
+                </div>
+
+                <!-- 填空模式 -->
+                <div id="fill-blank-mode" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">选词填空练习</h2>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-600 mr-2">难度:</span>
+                            <select id="difficulty" class="border rounded-md px-2 py-1 text-sm focus-ring">
+                                <option value="easy">简单</option>
+                                <option value="medium">中等</option>
+                                <option value="hard">困难</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex items-center">
+                            <span class="font-medium mr-2">当前得分:</span>
+                            <span id="score-display" class="text-primary font-bold">0</span>
+                        </div>
+                    </div>
+                    
+                    <div id="fill-blank-question" class="mb-6">
+                        <p class="text-lg mb-4" id="example-sentence"></p>
+                        <!-- 选项将通过JS动态添加 -->
+                    </div>
+
+                    <div id="feedback" class="mb-6 hidden">
+                        <div class="p-4 rounded-md" id="feedback-content">
+                            <!-- 反馈内容将通过JS动态添加 -->
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button id="check-answer" class="bg-primary text-white px-6 py-2 rounded-md hover:bg-secondary transition-colors duration-200">
+                            检查答案
+                        </button>
+                        <button id="next-question" class="ml-4 bg-primary text-white px-6 py-2 rounded-md hover:bg-secondary transition-colors duration-200">
+                            下一题
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 闯关模式 -->
+        <section id="challenge-section" class="mb-8 hidden">
+            <div class="bg-white rounded-lg shadow-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">闯关模式</h2>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600 mr-2">关卡:</span>
+                        <span id="challenge-level" class="font-bold">1</span>
+                        <span class="text-sm text-gray-600 mx-2">/</span>
+                        <span>50</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex items-center mb-2">
+                        <span class="font-medium mr-2">当前得分:</span>
+                        <span id="challenge-score" class="text-primary font-bold">0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+                        <div class="bg-primary h-2.5 rounded-full" id="level-progress" style="width: 2%"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>关卡进度</span>
+                        <span id="level-progress-text">1/50</span>
+                    </div>
+                </div>
+                
+                <div id="challenge-question" class="mb-6">
+                    <p class="text-lg mb-4" id="challenge-example"></p>
+                    <div id="challenge-options" class="mt-6 space-y-2">
+                        <!-- 选项将通过JS动态添加 -->
+                    </div>
+                </div>
+
+                <div id="challenge-feedback" class="mb-6 hidden">
+                    <div class="p-4 rounded-md" id="challenge-feedback-content">
+                        <!-- 反馈内容将通过JS动态添加 -->
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button id="check-challenge" class="bg-primary text-white px-6 py-2 rounded-md hover:bg-secondary transition-colors duration-200">
+                        检查答案
+                    </button>
+                    <button id="next-challenge" class="ml-4 bg-primary text-white px-6 py-2 rounded-md hover:bg-secondary transition-colors duration-200">
+                        下一关
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 学习进度 -->
+        <section id="progress-section" class="mb-8 hidden">
+            <div class="bg-white rounded-lg shadow-card p-6">
+                <h2 class="text-xl font-semibold mb-4">学习进度</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-2">练习统计</h3>
+                        <canvas id="progress-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-2">掌握情况</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm">已掌握单词</span>
+                                    <span class="text-sm font-medium" id="mastered-count">0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div class="bg-green-500 h-2.5 rounded-full" id="mastered-progress" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm">学习中单词</span>
+                                    <span class="text-sm font-medium" id="learning-count">0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div class="bg-yellow-500 h-2.5 rounded-full" id="learning-progress" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm">未掌握单词</span>
+                                    <span class="text-sm font-medium" id="unmastered-count">0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div class="bg-red-500 h-2.5 rounded-full" id="unmastered-progress" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 设置 -->
+        <section id="settings-section" class="mb-8 hidden">
+            <div class="bg-white rounded-lg shadow-card p-6">
+                <h2 class="text-xl font-semibold mb-4">设置</h2>
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-medium mb-2">练习设置</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="number" id="questions-per-session" class="border rounded-md px-4 py-2 w-24 focus-ring" value="10" min="1" max="50">
+                                <label for="questions-per-session" class="ml-2">每轮练习题目数量</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="auto-play-audio" class="mr-2">
+                                <label for="auto-play-audio">自动播放单词发音</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-2">学习范围</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="number" id="min-word-id" class="border rounded-md px-4 py-2 w-24 focus-ring" value="1" min="1">
+                                <label for="min-word-id" class="ml-2">起始单词ID</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="number" id="max-word-id" class="border rounded-md px-4 py-2 w-24 focus-ring" value="1000" min="1">
+                                <label for="max-word-id" class="ml-2">结束单词ID</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button id="save-settings" class="bg-primary text-white px-6 py-2 rounded-md hover:bg-secondary transition-colors duration-200">
+                            保存设置
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+
+    <script src="js/app.js"></script>
+</body>
+</html>
