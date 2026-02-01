@@ -97,7 +97,7 @@ async function loadData() {
         updateLoadingText('正在加载词汇数据...');
 
         // 加载词汇数据
-        const vocabResponse = await fetch('data/tb_vocabulary.json');
+        const vocabResponse = await fetch('data/tb_vocabulary_simple.json');
         if (!vocabResponse.ok) {
             throw new Error(`加载词汇数据失败: ${vocabResponse.status}`);
         }
@@ -107,7 +107,7 @@ async function loadData() {
         updateLoadingText('正在加载例句数据...');
 
         // 加载例句数据
-        const examplesResponse = await fetch('data/tb_voc_examples.json');
+        const examplesResponse = await fetch('data/tb_voc_examples_simple.json');
         if (!examplesResponse.ok) {
             throw new Error(`加载例句数据失败: ${examplesResponse.status}`);
         }
@@ -115,9 +115,6 @@ async function loadData() {
 
         // 更新加载提示
         updateLoadingText('正在处理数据...');
-
-        // 隐藏加载状态
-        loading.classList.add('hidden');
         
         // 按wordid对例句进行分组
         const groupedExamples = {};
@@ -142,6 +139,9 @@ async function loadData() {
 
         // 更新加载提示
         updateLoadingText(`已加载 ${vocabularyData.length} 个高频词汇`);
+
+        // 隐藏加载状态
+        loading.classList.add('hidden');
 
         // 更新进度数据
         progressData.total = vocabularyData.length;
