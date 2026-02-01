@@ -135,7 +135,14 @@ async function loadData() {
         
         // 过滤掉没有例句的单词
         vocabularyData = vocabularyData.filter(word => word.examples.length > 0);
-        
+
+        // 精简数据：只保留高频词汇（按 frequency 降序排列，取前 1000 个）
+        vocabularyData.sort((a, b) => (b.frequency || 0) - (a.frequency || 0));
+        vocabularyData = vocabularyData.slice(0, 1000);
+
+        // 更新加载提示
+        updateLoadingText(`已加载 ${vocabularyData.length} 个高频词汇`);
+
         // 更新进度数据
         progressData.total = vocabularyData.length;
         progressData.unmasteredWords = new Set(vocabularyData.map(word => word.wordid));
