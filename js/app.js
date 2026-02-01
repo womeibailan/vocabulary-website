@@ -67,37 +67,55 @@ const challengeLevel = document.getElementById('challenge-level');
 // 初始化函数
 async function init() {
     try {
+        // 显示初始加载提示
+        updateLoadingText('准备加载数据...');
+
         // 加载数据
         await loadData();
-        
+
         // 初始化练习
         initExercise();
-        
+
         // 初始化导航
         initNavigation();
-        
+
         // 初始化设置
         initSettings();
-        
+
         // 初始化进度
         updateProgressDisplay();
     } catch (error) {
         console.error('初始化失败:', error);
-        alert('加载数据失败，请刷新页面重试');
+        // 错误已在 loadData 中处理显示
     }
 }
 
 // 加载数据
 async function loadData() {
     try {
+        // 更新加载提示
+        updateLoadingText('正在加载词汇数据...');
+
         // 加载词汇数据
         const vocabResponse = await fetch('data/tb_vocabulary.json');
+        if (!vocabResponse.ok) {
+            throw new Error(`加载词汇数据失败: ${vocabResponse.status}`);
+        }
         vocabularyData = await vocabResponse.json();
-        
+
+        // 更新加载提示
+        updateLoadingText('正在加载例句数据...');
+
         // 加载例句数据
         const examplesResponse = await fetch('data/tb_voc_examples.json');
+        if (!examplesResponse.ok) {
+            throw new Error(`加载例句数据失败: ${examplesResponse.status}`);
+        }
         examplesData = await examplesResponse.json();
-        
+
+        // 更新加载提示
+        updateLoadingText('正在处理数据...');
+
         // 隐藏加载状态
         loading.classList.add('hidden');
         
@@ -124,7 +142,31 @@ async function loadData() {
         
     } catch (error) {
         console.error('加载数据失败:', error);
+
+        // 显示友好的错误提示
+        loading.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 px-4">
+                <i class="fa fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
+                <p class="text-red-600 font-medium mb-2">数据加载失败</p>
+                <p class="text-sm text-gray-600 text-center mb-4">${error.message}</p>
+                <p class="text-xs text-gray-500 text-center mb-4">
+                    可能是网络不稳定或数据文件过大。<br>
+                    建议在 Wi-Fi 环境下访问。
+                </p>
+                <button onclick="location.reload()" class="bg-primary text-white px-6 py-2 rounded-md hover:bg-secondary transition-colors duration-200">
+                    重新加载
+                </button>
+            </div>
+        `;
         throw error;
+    }
+}
+
+// 更新加载文本
+function updateLoadingText(text) {
+    const loadingText = document.getElementById('loading-text');
+    if (loadingText) {
+        loadingText.textContent = text;
     }
 }
 
